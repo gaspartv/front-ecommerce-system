@@ -2,8 +2,7 @@ import axios from "axios";
 import Cookies from "js-cookie";
 
 // Base URL da API
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 // Configuração base do axios
 const api = axios.create({
