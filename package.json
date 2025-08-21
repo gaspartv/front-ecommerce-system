@@ -3,9 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
+    "dev": "next dev --turbopack",
+    "pm2": "pm2 start ecosystem.config.json",
     "lint": "next lint"
   },
   "dependencies": {
