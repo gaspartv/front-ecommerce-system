@@ -1,5 +1,6 @@
 "use client";
 
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import DataTable from "@/components/dashboard/DataTable";
 
@@ -154,21 +155,23 @@ export default function UsuariosPage() {
   };
 
   return (
-    <DashboardLayout
-      currentPage="usuarios"
-      title="Usuários"
-      subtitle="Gerencie os usuários cadastrados no sistema"
-      actionButton={{
-        label: "+ Novo Usuário",
-        onClick: handleNovoUsuario,
-      }}
-    >
-      <DataTable<Usuario>
-        title="Lista de Usuários"
-        columns={columns}
-        data={usuarios}
-        searchPlaceholder="Buscar usuários..."
-      />
-    </DashboardLayout>
+    <ProtectedRoute>
+      <DashboardLayout
+        currentPage="usuarios"
+        title="Usuários"
+        subtitle="Gerencie os usuários cadastrados no sistema"
+        actionButton={{
+          label: "+ Novo Usuário",
+          onClick: handleNovoUsuario,
+        }}
+      >
+        <DataTable<Usuario>
+          title="Lista de Usuários"
+          columns={columns}
+          data={usuarios}
+          searchPlaceholder="Buscar usuários..."
+        />
+      </DashboardLayout>
+    </ProtectedRoute>
   );
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import DataTable from "@/components/dashboard/DataTable";
 import { BuildingOfficeIcon } from "@/components/icons";
@@ -218,43 +219,45 @@ export default function EmpresasPage() {
   };
 
   return (
-    <DashboardLayout
-      currentPage="empresas"
-      title="Empresas"
-      subtitle="Gerencie as empresas cadastradas no sistema"
-      actionButton={{
-        label: "+ Nova Empresa",
-        onClick: handleNovaEmpresa,
-      }}
-    >
-      <DataTable<Empresa>
-        title="Lista de Empresas"
-        columns={columns}
-        data={empresas}
-        searchPlaceholder="Buscar empresas..."
-        onSearch={handleSearchChange}
-        showPagination={true}
-        currentPage={currentPage}
-        totalPages={totalPages}
-        onPageChange={handlePageChange}
-        itemsPerPage={itemsPerPage}
-        totalItems={totalItems}
-      />
+    <ProtectedRoute>
+      <DashboardLayout
+        currentPage="empresas"
+        title="Empresas"
+        subtitle="Gerencie as empresas cadastradas no sistema"
+        actionButton={{
+          label: "+ Nova Empresa",
+          onClick: handleNovaEmpresa,
+        }}
+      >
+        <DataTable<Empresa>
+          title="Lista de Empresas"
+          columns={columns}
+          data={empresas}
+          searchPlaceholder="Buscar empresas..."
+          onSearch={handleSearchChange}
+          showPagination={true}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={handlePageChange}
+          itemsPerPage={itemsPerPage}
+          totalItems={totalItems}
+        />
 
-      <ConfirmDeleteModal
-        isOpen={showDeleteModal}
-        onClose={() => setShowDeleteModal(false)}
-        onConfirm={handleConfirmDelete}
-        itemName={selectedEmpresa?.name || ""}
-      />
+        <ConfirmDeleteModal
+          isOpen={showDeleteModal}
+          onClose={() => setShowDeleteModal(false)}
+          onConfirm={handleConfirmDelete}
+          itemName={selectedEmpresa?.name || ""}
+        />
 
-      <ChangeStatusModal
-        isOpen={showStatusModal}
-        onClose={() => setShowStatusModal(false)}
-        onConfirm={handleConfirmStatusChange}
-        currentStatus={selectedEmpresa?.disabled ? "Inativa" : "Ativa"}
-        itemName={selectedEmpresa?.name || ""}
-      />
-    </DashboardLayout>
+        <ChangeStatusModal
+          isOpen={showStatusModal}
+          onClose={() => setShowStatusModal(false)}
+          onConfirm={handleConfirmStatusChange}
+          currentStatus={selectedEmpresa?.disabled ? "Inativa" : "Ativa"}
+          itemName={selectedEmpresa?.name || ""}
+        />
+      </DashboardLayout>
+    </ProtectedRoute>
   );
 }
