@@ -4,7 +4,7 @@ import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import DataTable from "@/components/dashboard/DataTable";
 
-interface Usuario extends Record<string, unknown> {
+interface User extends Record<string, unknown> {
   id: number;
   nome: string;
   email: string;
@@ -13,8 +13,8 @@ interface Usuario extends Record<string, unknown> {
   status: string;
 }
 
-export default function UsuariosPage() {
-  const usuarios: Usuario[] = [
+export default function UsersPage() {
+  const users: User[] = [
     {
       id: 1,
       nome: "João Silva",
@@ -72,7 +72,7 @@ export default function UsuariosPage() {
     {
       header: "Usuário",
       key: "nome",
-      render: (value: unknown, item: Usuario) => (
+      render: (value: unknown, item: User) => (
         <div className="flex items-center">
           <div className="h-10 w-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center">
             <span className="text-white text-sm font-medium">
@@ -149,7 +149,7 @@ export default function UsuariosPage() {
     },
   ];
 
-  const handleNovoUsuario = () => {
+  const handleNewUser = () => {
     // Implementar lógica para novo usuário
     console.log("Criar novo usuário");
   };
@@ -157,18 +157,18 @@ export default function UsuariosPage() {
   return (
     <ProtectedRoute>
       <DashboardLayout
-        currentPage="usuarios"
+        currentPage="users"
         title="Usuários"
         subtitle="Gerencie os usuários cadastrados no sistema"
         actionButton={{
           label: "+ Novo Usuário",
-          onClick: handleNovoUsuario,
+          onClick: handleNewUser,
         }}
       >
-        <DataTable<Usuario>
+        <DataTable<User>
           title="Lista de Usuários"
           columns={columns}
-          data={usuarios}
+          data={users}
           searchPlaceholder="Buscar usuários..."
         />
       </DashboardLayout>

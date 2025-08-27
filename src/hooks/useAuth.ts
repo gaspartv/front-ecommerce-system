@@ -27,14 +27,14 @@ export function useAuth() {
     Cookies.set("refreshToken", refreshToken);
 
     setIsAuthenticated(true);
-    router.push("/front_system/dashboard");
+    router.push("/dashboard");
   };
 
   const logout = () => {
     Cookies.remove("token");
     Cookies.remove("user");
     setIsAuthenticated(false);
-    router.push("/front_system/sign-in");
+    router.push("/front_system/");
   };
 
   const getUser = async () => {

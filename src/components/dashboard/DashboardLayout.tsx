@@ -19,7 +19,7 @@ interface MenuItem {
 
 interface DashboardLayoutProps {
   children: ReactNode;
-  currentPage: "dashboard" | "empresas" | "usuarios";
+  currentPage: "dashboard" | "businesses" | "users";
   title: string;
   subtitle: string;
   actionButton?: {
@@ -46,15 +46,15 @@ export default function DashboardLayout({
     },
     {
       name: "Empresas",
-      href: "/dashboard/empresas",
+      href: "/dashboard/businesses",
       icon: BuildingOfficeIcon,
-      current: currentPage === "empresas",
+      current: currentPage === "businesses",
     },
     {
       name: "Usuários",
-      href: "/dashboard/usuarios",
+      href: "/dashboard/users",
       icon: UsersIcon,
-      current: currentPage === "usuarios",
+      current: currentPage === "users",
     },
   ];
 

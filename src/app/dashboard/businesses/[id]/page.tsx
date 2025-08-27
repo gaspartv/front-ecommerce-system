@@ -108,7 +108,7 @@ export default function EmpresaDetalhePage() {
     return (
       <ProtectedRoute>
         <DashboardLayout
-          currentPage="empresas"
+          currentPage="businesses"
           title="Carregando..."
           subtitle="Carregando detalhes da empresa"
         >
@@ -123,7 +123,7 @@ export default function EmpresaDetalhePage() {
   return (
     <ProtectedRoute>
       <DashboardLayout
-        currentPage="empresas"
+        currentPage="businesses"
         title={empresa.nome}
         subtitle="Detalhes da empresa"
       >
@@ -132,7 +132,7 @@ export default function EmpresaDetalhePage() {
           <div className="mb-6">
             <div className="flex items-center justify-between">
               <button
-                onClick={() => router.push("/dashboard/empresas")}
+                onClick={() => router.push("/dashboard/businesses")}
                 className="flex items-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors cursor-pointer"
               >
                 <ArrowLeftIcon className="h-5 w-5 mr-2" />

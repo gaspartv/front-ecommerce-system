@@ -59,7 +59,7 @@ export default function NovaEmpresaPage() {
       await new Promise((resolve) => setTimeout(resolve, 1500));
 
       // Redirecionar para a página de empresas
-      router.push("/dashboard/empresas");
+      router.push("/dashboard/businesses");
     } catch (error) {
       console.error("Erro ao criar empresa:", error);
     } finally {
@@ -68,13 +68,13 @@ export default function NovaEmpresaPage() {
   };
 
   const handleCancel = () => {
-    router.push("/dashboard/empresas");
+    router.push("/dashboard/businesses");
   };
 
   return (
     <ProtectedRoute>
       <DashboardLayout
-        currentPage="empresas"
+        currentPage="businesses"
         title="Nova Empresa"
         subtitle="Cadastre uma nova empresa no sistema"
       >

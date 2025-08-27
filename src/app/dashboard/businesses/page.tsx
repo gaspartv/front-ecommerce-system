@@ -35,14 +35,14 @@ interface ApiResponse {
   data: Empresa[];
 }
 
-export default function EmpresasPage() {
+export default function BusinessesPage() {
   const router = useRouter();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [selectedEmpresa, setSelectedEmpresa] = useState<Empresa | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
-  const [empresas, setEmpresas] = useState<Empresa[]>([]);
+  const [businesses, setBusinesses] = useState<Empresa[]>([]);
   const [totalPages, setTotalPages] = useState(0);
   const [totalItems, setTotalItems] = useState(0);
   const itemsPerPage = 5;
@@ -60,7 +60,7 @@ export default function EmpresasPage() {
   };
 
   // Função para buscar empresas da API
-  const fetchEmpresas = async (page: number = 1, search: string = "") => {
+  const fetchBusinesses = async (page: number = 1, search: string = "") => {
     try {
       const params = new URLSearchParams({
         page: page.toString(),
@@ -74,7 +74,9 @@ export default function EmpresasPage() {
       const response = await api.get<ApiResponse>(`/business?${params}`);
       const { data, total, last_page } = response.data;
 
-      setEmpresas(data);
+      console.log("Empresas carregadas:", data);
+
+      setBusinesses(data);
       setTotalPages(last_page);
       setTotalItems(total);
     } catch (error) {
@@ -84,7 +86,7 @@ export default function EmpresasPage() {
   };
 
   useEffect(() => {
-    fetchEmpresas(currentPage, searchTerm);
+    fetchBusinesses(currentPage, searchTerm);
   }, [currentPage, searchTerm]);
 
   const handlePageChange = (page: number) => {
@@ -97,7 +99,7 @@ export default function EmpresasPage() {
   };
 
   const handleEditEmpresa = (empresa: Empresa) => {
-    router.push(`/dashboard/empresas/${empresa.id}`);
+    router.push(`/dashboard/businesses/${empresa.id}`);
   };
 
   const handleDeleteEmpresa = (empresa: Empresa) => {
@@ -215,13 +217,13 @@ export default function EmpresasPage() {
   ];
 
   const handleNovaEmpresa = () => {
-    router.push("/dashboard/empresas/nova");
+    router.push("/dashboard/businesses/new");
   };
 
   return (
     <ProtectedRoute>
       <DashboardLayout
-        currentPage="empresas"
+        currentPage="businesses"
         title="Empresas"
         subtitle="Gerencie as empresas cadastradas no sistema"
         actionButton={{
@@ -232,7 +234,7 @@ export default function EmpresasPage() {
         <DataTable<Empresa>
           title="Lista de Empresas"
           columns={columns}
-          data={empresas}
+          data={businesses}
           searchPlaceholder="Buscar empresas..."
           onSearch={handleSearchChange}
           showPagination={true}

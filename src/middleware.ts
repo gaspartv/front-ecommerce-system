@@ -4,7 +4,9 @@ import api from "./config/axios";
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  const publicRoutes = ["/sign-in/", "/recovery-password/"];
+  console.log("Middleware - Pathname:", pathname);
+
+  const publicRoutes = ["/", "/recovery-password/"];
 
   const isPublicRoute = publicRoutes.includes(pathname);
 
@@ -42,7 +44,7 @@ export async function middleware(request: NextRequest) {
   }
 
   if (!token && pathname !== "/" && !pathname.startsWith("/public")) {
-    return NextResponse.redirect(new URL("/front_system/sign-in", request.url));
+    return NextResponse.redirect(new URL("/front_system/", request.url));
   }
 
   return NextResponse.next();
