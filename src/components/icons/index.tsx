@@ -143,3 +143,19 @@ export const XMarkIcon = ({ className }: { className?: string }) => (
     />
   </svg>
 );
+
+export const CopyIcon = ({ className }: { className?: string }) => (
+  <svg
+    className={className}
+    fill="none"
+    stroke="currentColor"
+    viewBox="0 0 24 24"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2M8 16h8a2 2 0 002-2v-4m-10 6v2a2 2 0 002 2h8a2 2 0 002-2v-8a2 2 0 00-2-2h-2"
+    />
+  </svg>
+);

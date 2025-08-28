@@ -3,8 +3,14 @@ import api from "./config/axios";
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const rawHost = request.headers.get("host") || "";
+  const host = rawHost.split(":")[0];
+  const subdomain = host.split(".")[0];
 
-  console.log("Middleware - Pathname:", pathname);
+  const isAdminSubdomain = subdomain === "admin-system";
+  if (!isAdminSubdomain) {
+    return NextResponse.rewrite(new URL("/fs/not-found", request.url));
+  }
 
   const publicRoutes = ["/", "/recovery-password/"];
 
@@ -33,18 +39,14 @@ export async function middleware(request: NextRequest) {
 
   if (isPublicRoute) {
     if (token) {
-      return NextResponse.redirect(
-        new URL("/front_system/dashboard", request.url)
-      );
+      return NextResponse.redirect(new URL("/fs/dashboard", request.url));
     }
 
-    return NextResponse.rewrite(
-      new URL(`/front_system/${pathname}`, request.url)
-    );
+    return NextResponse.rewrite(new URL(`/fs/${pathname}`, request.url));
   }
 
   if (!token && pathname !== "/" && !pathname.startsWith("/public")) {
-    return NextResponse.redirect(new URL("/front_system/", request.url));
+    return NextResponse.redirect(new URL("/fs/", request.url));
   }
 
   return NextResponse.next();
@@ -52,14 +54,9 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public folder assets
-     */
-    "/((?!api|_next/static|_next/image|favicon.ico|.*\\.svg$|.*\\.png$|.*\\.jpg$|.*\\.jpeg$|.*\\.gif$|.*\\.ico$).*)",
+    // Inclui explicitamente a raiz "/" (que vira /fs por causa do basePath)
+    "/",
+    // E todas as demais rotas, excluindo assets e api
+    "/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|ico)$).*)",
   ],
 };

@@ -34,7 +34,7 @@ export function useAuth() {
     Cookies.remove("token");
     Cookies.remove("user");
     setIsAuthenticated(false);
-    router.push("/front_system/");
+    router.push("/fs/");
   };
 
   const getUser = async () => {

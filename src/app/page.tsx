@@ -4,7 +4,6 @@ import PublicLayout from "@/components/layouts/PublicLayout";
 import api from "@/config/axios";
 import { useAuth } from "@/hooks/useAuth";
 import { AuthResponse, isAxiosError } from "@/types/api";
-import Link from "next/link";
 import { useState } from "react";
 import { toast } from "react-toastify";
 
@@ -107,12 +106,12 @@ export default function SignInPage() {
                     Lembrar de mim
                   </span>
                 </label>
-                <Link
+                {/* <Link
                   href="/recovery-password"
                   className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium transition-colors"
                 >
                   Esqueceu a senha?
-                </Link>
+                </Link> */}
               </div>
 
               <button
