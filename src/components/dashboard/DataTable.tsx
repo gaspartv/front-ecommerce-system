@@ -1,4 +1,4 @@
-import React, { ReactNode, useRef } from "react";
+import React, { ReactNode, useEffect, useRef, useState } from "react";
 import Pagination from "../ui/Pagination";
 
 export interface Column<T = Record<string, unknown>> {
@@ -27,6 +27,9 @@ export interface DataTableProps<T = Record<string, unknown>> {
   onSortChange?: (key: string) => void;
   reorderable?: boolean;
   onColumnOrderChange?: (newOrderKeys: string[]) => void;
+  showStatusFilter?: boolean;
+  statusFilter?: string;
+  onStatusFilterChange?: (status: string) => void;
 }
 
 export default function DataTable<
@@ -51,7 +54,22 @@ export default function DataTable<
     onSortChange,
     reorderable = false,
     onColumnOrderChange,
+    showStatusFilter = false,
+    statusFilter = "all",
+    onStatusFilterChange,
   } = props;
+
+  // Estado local para o campo de busca com debounce
+  const [searchValue, setSearchValue] = useState("");
+
+  // Effect para implementar debounce na busca
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      onSearch?.(searchValue);
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [searchValue, onSearch]);
 
   const dragStartIndexRef = useRef<number | null>(null);
   const handleDragStart = (
@@ -91,28 +109,25 @@ export default function DataTable<
             {title}
           </h3>
           <div className="flex items-center gap-3 flex-wrap">
-            <div className="flex items-center gap-2 text-[11px] text-gray-500 dark:text-gray-400">
-              <label htmlFor="page-size-select" className="font-medium">
-                Itens/página:
-              </label>
-              <select
-                id="page-size-select"
-                value={itemsPerPage}
-                onChange={(e) => onPageSizeChange?.(Number(e.target.value))}
-                className="px-2 py-1 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-[11px] focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                {pageSizeOptions.map((opt) => (
-                  <option key={opt} value={opt}>
-                    {opt}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {showStatusFilter && (
+              <div>
+                <select
+                  value={statusFilter}
+                  onChange={(e) => onStatusFilterChange?.(e.target.value)}
+                  className="px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                >
+                  <option value="all">Todos</option>
+                  <option value="active">Ativo</option>
+                  <option value="inactive">Inativo</option>
+                </select>
+              </div>
+            )}
             <div>
               <input
                 type="text"
                 placeholder={searchPlaceholder}
-                onChange={(e) => onSearch?.(e.target.value)}
+                value={searchValue}
+                onChange={(e) => setSearchValue(e.target.value)}
                 className="px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
               />
             </div>
@@ -218,13 +233,32 @@ export default function DataTable<
         </table>
       </div>
       {showPagination && onPageChange && (
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={onPageChange}
-          itemsPerPage={itemsPerPage}
-          totalItems={totalItems}
-        />
+        <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
+          <div className="flex items-center gap-2 text-[11px] text-gray-500 dark:text-gray-400">
+            <label htmlFor="page-size-select" className="font-medium">
+              Itens/página:
+            </label>
+            <select
+              id="page-size-select"
+              value={itemsPerPage}
+              onChange={(e) => onPageSizeChange?.(Number(e.target.value))}
+              className="px-2 py-1 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-[11px] focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              {pageSizeOptions.map((opt) => (
+                <option key={opt} value={opt}>
+                  {opt}
+                </option>
+              ))}
+            </select>
+          </div>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={onPageChange}
+            itemsPerPage={itemsPerPage}
+            totalItems={totalItems}
+          />
+        </div>
       )}
     </div>
   );

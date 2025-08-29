@@ -3,6 +3,16 @@
 import { ArrowLeftIcon, CheckIcon, CopyIcon } from "@/components/icons";
 import Modal from "@/components/ui/Modal";
 import axios from "@/config/axios";
+import {
+  fetchAddressByCEP,
+  formatCEP,
+  formatCNPJ,
+  formatPhone,
+  isValidCEP,
+  sanitizeCEPForAPI,
+  sanitizeCNPJForAPI,
+  sanitizePhoneForAPI,
+} from "@/utils/formatters";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -109,7 +119,60 @@ export default function BusinessWizard({
   const [lastSavedPayloads, setLastSavedPayloads] = useState<
     Record<string, string>
   >({});
+  const [addressesWithValidCEP, setAddressesWithValidCEP] = useState<
+    Set<number>
+  >(new Set());
   const [showSuccess, setShowSuccess] = useState(false);
+
+  // Função para buscar dados do CEP
+  const fetchCEPData = useCallback(
+    async (cep: string, addressIndex: number) => {
+      if (!isValidCEP(cep)) {
+        // CEP inválido - remove dos endereços válidos
+        setAddressesWithValidCEP((prev) => {
+          const newSet = new Set(prev);
+          newSet.delete(addressIndex);
+          return newSet;
+        });
+        return;
+      }
+
+      const addressData = await fetchAddressByCEP(cep);
+
+      if (!addressData) {
+        // CEP não encontrado - remove dos endereços válidos
+        setAddressesWithValidCEP((prev) => {
+          const newSet = new Set(prev);
+          newSet.delete(addressIndex);
+          return newSet;
+        });
+        return;
+      }
+
+      // CEP válido - adiciona aos endereços válidos e preenche dados
+      setAddressesWithValidCEP((prev) => new Set(prev).add(addressIndex));
+
+      // Preenche os campos automaticamente
+      setBusiness((prev) => {
+        if (!prev) return null;
+
+        const updatedAddresses = [...prev.addresses];
+        updatedAddresses[addressIndex] = {
+          ...updatedAddresses[addressIndex],
+          address:
+            addressData.logradouro || updatedAddresses[addressIndex].address,
+          neighborhood:
+            addressData.bairro || updatedAddresses[addressIndex].neighborhood,
+          city: addressData.localidade || updatedAddresses[addressIndex].city,
+          state: addressData.uf || updatedAddresses[addressIndex].state,
+          country: "Brasil", // Assumindo Brasil para CEP brasileiro
+        };
+
+        return { ...prev, addresses: updatedAddresses };
+      });
+    },
+    []
+  );
 
   // Steps components
   const BasicStep: StepDefinition["Component"] = useCallback(
@@ -143,9 +206,10 @@ export default function BusinessWizard({
             </label>
             <input
               type="tel"
-              value={business.phone || ""}
+              value={formatPhone(business.phone || "")}
               onChange={(e) => onChange("phone", e.target.value)}
               className="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="(11) 99999-9999"
             />
           </div>
         </div>
@@ -155,9 +219,10 @@ export default function BusinessWizard({
               CNPJ
             </label>
             <input
-              value={business.cnpj || ""}
+              value={formatCNPJ(business.cnpj || "")}
               onChange={(e) => onChange("cnpj", e.target.value)}
               className="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="11.111.111/0001-11"
             />
           </div>
           <div>
@@ -222,7 +287,7 @@ export default function BusinessWizard({
                 </button>
               )}
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <input
                 placeholder="Nome"
                 value={a.name}
@@ -230,17 +295,12 @@ export default function BusinessWizard({
                 className="px-2 py-1.5 text-sm rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700"
               />
               <input
-                placeholder="Código"
-                value={a.code}
-                onChange={(e) => onAddressChange(idx, "code", e.target.value)}
-                className="px-2 py-1.5 text-sm rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700"
-              />
-              <input
                 placeholder="CEP"
-                value={a.zip_code}
+                value={formatCEP(a.zip_code)}
                 onChange={(e) =>
                   onAddressChange(idx, "zip_code", e.target.value)
                 }
+                onBlur={(e) => fetchCEPData(e.target.value, idx)}
                 className="px-2 py-1.5 text-sm rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700"
               />
             </div>
@@ -251,13 +311,23 @@ export default function BusinessWizard({
                 onChange={(e) =>
                   onAddressChange(idx, "address", e.target.value)
                 }
-                className="px-2 py-1.5 text-sm rounded border col-span-2 md:col-span-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700"
+                disabled={!addressesWithValidCEP.has(idx)}
+                className={`px-2 py-1.5 text-sm rounded border col-span-2 md:col-span-2 border-gray-300 dark:border-gray-600 ${
+                  addressesWithValidCEP.has(idx)
+                    ? "bg-white dark:bg-gray-700"
+                    : "bg-gray-100 dark:bg-gray-600 cursor-not-allowed"
+                }`}
               />
               <input
                 placeholder="Número"
                 value={a.number}
                 onChange={(e) => onAddressChange(idx, "number", e.target.value)}
-                className="px-2 py-1.5 text-sm rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700"
+                disabled={!addressesWithValidCEP.has(idx)}
+                className={`px-2 py-1.5 text-sm rounded border border-gray-300 dark:border-gray-600 ${
+                  addressesWithValidCEP.has(idx)
+                    ? "bg-white dark:bg-gray-700"
+                    : "bg-gray-100 dark:bg-gray-600 cursor-not-allowed"
+                }`}
               />
               <input
                 placeholder="Compl."
@@ -265,7 +335,12 @@ export default function BusinessWizard({
                 onChange={(e) =>
                   onAddressChange(idx, "complement", e.target.value)
                 }
-                className="px-2 py-1.5 text-sm rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700"
+                disabled={!addressesWithValidCEP.has(idx)}
+                className={`px-2 py-1.5 text-sm rounded border border-gray-300 dark:border-gray-600 ${
+                  addressesWithValidCEP.has(idx)
+                    ? "bg-white dark:bg-gray-700"
+                    : "bg-gray-100 dark:bg-gray-600 cursor-not-allowed"
+                }`}
               />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
@@ -275,19 +350,34 @@ export default function BusinessWizard({
                 onChange={(e) =>
                   onAddressChange(idx, "neighborhood", e.target.value)
                 }
-                className="px-2 py-1.5 text-sm rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700"
+                disabled={!addressesWithValidCEP.has(idx)}
+                className={`px-2 py-1.5 text-sm rounded border border-gray-300 dark:border-gray-600 ${
+                  addressesWithValidCEP.has(idx)
+                    ? "bg-white dark:bg-gray-700"
+                    : "bg-gray-100 dark:bg-gray-600 cursor-not-allowed"
+                }`}
               />
               <input
                 placeholder="Cidade"
                 value={a.city}
                 onChange={(e) => onAddressChange(idx, "city", e.target.value)}
-                className="px-2 py-1.5 text-sm rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700"
+                disabled={!addressesWithValidCEP.has(idx)}
+                className={`px-2 py-1.5 text-sm rounded border border-gray-300 dark:border-gray-600 ${
+                  addressesWithValidCEP.has(idx)
+                    ? "bg-white dark:bg-gray-700"
+                    : "bg-gray-100 dark:bg-gray-600 cursor-not-allowed"
+                }`}
               />
               <input
                 placeholder="Estado"
                 value={a.state}
                 onChange={(e) => onAddressChange(idx, "state", e.target.value)}
-                className="px-2 py-1.5 text-sm rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700"
+                disabled={!addressesWithValidCEP.has(idx)}
+                className={`px-2 py-1.5 text-sm rounded border border-gray-300 dark:border-gray-600 ${
+                  addressesWithValidCEP.has(idx)
+                    ? "bg-white dark:bg-gray-700"
+                    : "bg-gray-100 dark:bg-gray-600 cursor-not-allowed"
+                }`}
               />
               <input
                 placeholder="País"
@@ -295,7 +385,12 @@ export default function BusinessWizard({
                 onChange={(e) =>
                   onAddressChange(idx, "country", e.target.value)
                 }
-                className="px-2 py-1.5 text-sm rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700"
+                disabled={!addressesWithValidCEP.has(idx)}
+                className={`px-2 py-1.5 text-sm rounded border border-gray-300 dark:border-gray-600 ${
+                  addressesWithValidCEP.has(idx)
+                    ? "bg-white dark:bg-gray-700"
+                    : "bg-gray-100 dark:bg-gray-600 cursor-not-allowed"
+                }`}
               />
             </div>
             <div>
@@ -314,7 +409,7 @@ export default function BusinessWizard({
         ))}
       </div>
     ),
-    []
+    [addressesWithValidCEP, fetchCEPData]
   );
 
   const steps: StepDefinition[] = useMemo(
@@ -334,8 +429,8 @@ export default function BusinessWizard({
           name: b.name,
           responsible: b.responsible,
           email: b.email,
-          phone: b.phone,
-          cnpj: b.cnpj,
+          phone: sanitizePhoneForAPI(b.phone || ""),
+          cnpj: sanitizeCNPJForAPI(b.cnpj || ""),
           notes: b.notes,
           addresses: b.addresses,
         }),
@@ -349,13 +444,35 @@ export default function BusinessWizard({
           business_code: b.code,
           addresses: b.addresses.map((a: Address) => {
             const { id, ...rest } = a;
-            return id ? { id, ...rest } : { ...rest };
+            const sanitizedAddress = {
+              ...rest,
+              zip_code: sanitizeCEPForAPI(rest.zip_code),
+            };
+            return id ? { id, ...sanitizedAddress } : { ...sanitizedAddress };
           }),
         }),
       },
     ],
     [BasicStep, AddressesStep]
   );
+
+  // Calcula CEPs válidos existentes quando os dados mudam
+  const initialValidCEPs = useMemo(() => {
+    if (!business?.addresses) return new Set<number>();
+
+    const validCEPIndexes = new Set<number>();
+    business.addresses.forEach((address, index) => {
+      if (isValidCEP(address.zip_code)) {
+        validCEPIndexes.add(index);
+      }
+    });
+    return validCEPIndexes;
+  }, [business?.addresses]);
+
+  // Sincroniza o state com o valor calculado
+  useEffect(() => {
+    setAddressesWithValidCEP(initialValidCEPs);
+  }, [initialValidCEPs]);
 
   // Carrega dados se modo edição
   useEffect(() => {

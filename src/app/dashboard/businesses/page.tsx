@@ -3,11 +3,21 @@
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import DataTable from "@/components/dashboard/DataTable";
-import { BuildingOfficeIcon } from "@/components/icons";
+import {
+  BuildingOfficeIcon,
+  PencilIcon,
+  StatusIcon,
+  TrashIcon,
+} from "@/components/icons";
 import ChangeStatusModal from "@/components/modals/ChangeStatusModal";
 import ConfirmDeleteModal from "@/components/modals/ConfirmDeleteModal";
 import api from "@/config/axios";
 import { resolveColumnLabel } from "@/config/columnTranslations";
+import {
+  formatCNPJ,
+  formatDateToBrazilian,
+  formatPhone,
+} from "@/utils/formatters";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "react-toastify";
@@ -50,6 +60,7 @@ export default function BusinessesPage() {
   const [selectedEmpresa, setSelectedEmpresa] = useState<Empresa | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [businesses, setBusinesses] = useState<Empresa[]>([]);
   const [totalPages, setTotalPages] = useState(0);
   const [totalItems, setTotalItems] = useState(0);
@@ -64,18 +75,6 @@ export default function BusinessesPage() {
   >([]);
   const STORAGE_KEY = "businesses_table_prefs";
 
-  // Função para formatar data para padrão brasileiro
-  const formatDateToBrazilian = (dateString: string): string => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("pt-BR", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
-
   // Função para buscar empresas da API
   const fetchBusinesses = useCallback(
     async (page: number = 1, search: string = "", force: boolean = false) => {
@@ -87,6 +86,12 @@ export default function BusinessesPage() {
 
         if (search.trim()) {
           params.append("search", search);
+        }
+
+        // Adiciona filtro de status se não for "all"
+        if (statusFilter !== "all") {
+          const isDisabled = statusFilter === "inactive";
+          params.append("disabled", isDisabled.toString());
         }
 
         if (sortKey) {
@@ -160,7 +165,7 @@ export default function BusinessesPage() {
       }
     },
     // dynamicColumns.length usado apenas para fallback; evita loop incluindo o array completo
-    [itemsPerPage, sortKey, sortDirection, dynamicColumns.length]
+    [itemsPerPage, sortKey, sortDirection, dynamicColumns.length, statusFilter]
   );
 
   useEffect(() => {
@@ -250,6 +255,11 @@ export default function BusinessesPage() {
     setCurrentPage(1); // Reset para primeira página ao buscar
   };
 
+  const handleStatusFilterChange = (status: string) => {
+    setStatusFilter(status);
+    setCurrentPage(1); // Reset para primeira página ao filtrar
+  };
+
   const handleEditEmpresa = (empresa: Empresa) => {
     router.push(`/dashboard/businesses/${empresa.id}`);
   };
@@ -332,6 +342,30 @@ export default function BusinessesPage() {
           ),
         };
       }
+      if (col.key === "phone") {
+        return {
+          header: col.label,
+          key: col.key,
+          sortable: true,
+          render: (_: unknown, item: Empresa) => (
+            <div className="text-sm text-gray-900 dark:text-white">
+              {formatPhone(item.phone)}
+            </div>
+          ),
+        };
+      }
+      if (col.key === "cnpj") {
+        return {
+          header: col.label,
+          key: col.key,
+          sortable: true,
+          render: (_: unknown, item: Empresa) => (
+            <div className="text-sm text-gray-900 dark:text-white font-mono">
+              {formatCNPJ(item.cnpj)}
+            </div>
+          ),
+        };
+      }
       if (col.key === "name") {
         return {
           header: col.label,
@@ -387,24 +421,27 @@ export default function BusinessesPage() {
       key: "actions",
       sortable: false,
       render: (_: unknown, item: Empresa) => (
-        <div className="text-sm font-medium space-x-4">
+        <div className="text-sm font-medium space-x-4 flex items-center">
           <button
-            className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 cursor-pointer"
+            className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 cursor-pointer p-1 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
             onClick={() => handleEditEmpresa(item)}
+            title="Editar"
           >
-            Editar
+            <PencilIcon className="h-4 w-4" />
           </button>
           <button
-            className="text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 cursor-pointer"
+            className="text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 cursor-pointer p-1 rounded hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors"
             onClick={() => handleChangeStatus(item)}
+            title="Alterar Status"
           >
-            Status
+            <StatusIcon className="h-4 w-4" />
           </button>
           <button
-            className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 cursor-pointer"
+            className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 cursor-pointer p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
             onClick={() => handleDeleteEmpresa(item)}
+            title="Excluir"
           >
-            Excluir
+            <TrashIcon className="h-4 w-4" />
           </button>
         </div>
       ),
@@ -452,9 +489,8 @@ export default function BusinessesPage() {
     try {
       setIsReloading(true);
       await fetchBusinesses(currentPage, searchTerm, true);
-      toast.success("Dados recarregados");
     } catch {
-      toast.error("Falha ao recarregar");
+      toast.error("Falha ao recarregar.");
     } finally {
       setIsReloading(false);
     }
@@ -502,6 +538,9 @@ export default function BusinessesPage() {
           onSortChange={handleSortChange}
           reorderable
           onColumnOrderChange={handleColumnOrderChange}
+          showStatusFilter={true}
+          statusFilter={statusFilter}
+          onStatusFilterChange={handleStatusFilterChange}
         />
 
         <ConfirmDeleteModal
